@@ -1,4 +1,4 @@
-package orderservice
+package main
 
 import "fmt"
 
