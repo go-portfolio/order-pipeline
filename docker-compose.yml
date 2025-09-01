@@ -37,6 +37,10 @@ services:
     build:
       context: .
       dockerfile: build/orderservice/Dockerfile
+    deploy:
+      resources:
+        limits:
+          memory: 4g  
     environment:
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_TOPIC=orders
