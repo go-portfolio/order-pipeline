@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/joho/godotenv"
 )
@@ -13,6 +14,8 @@ type Config struct {
 	KafkaBrokers     string
 	KafkaTopic       string
 	OrderServiceAddr string
+	RedisAddr        string
+	CacheServiceAddr string
 }
 
 // Load ищет .env вверх от файла и загружает конфигурацию
@@ -45,10 +48,21 @@ func Load(file string) *Config {
 	cfg.KafkaBrokers = os.Getenv("KAFKA_BROKERS")
 	cfg.KafkaTopic = os.Getenv("KAFKA_TOPIC")
 	cfg.OrderServiceAddr = os.Getenv("ORDER_SERVICE_ADDR")
+	cfg.RedisAddr = os.Getenv("REDIS_ADDR")
+	cfg.CacheServiceAddr = os.Getenv("CACHE_SERVICE_ADDR")
 
 	if cfg.KafkaBrokers == "" || cfg.KafkaTopic == "" || cfg.OrderServiceAddr == "" {
 		log.Fatal("Не все переменные окружения для БД установлены")
 	}
 
 	return cfg
+}
+
+// loadConfig загружает конфигурацию из файла, определяя путь до текущего файла
+func LoadConfig() Config {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		log.Fatal("не удалось определить путь до конфигурации")
+	}
+	return *Load(filename)
 }

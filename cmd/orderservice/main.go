@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net"
-	"runtime"
 	"strings"
 
 	"github.com/go-portfolio/order-pipeline/internal/config"
@@ -33,7 +32,7 @@ func (s *server) CreateOrder(ctx context.Context, req *pb.OrderRequest) (*pb.Ord
 
 func main() {
 	// Загружаем конфигурацию приложения из файла
-	appCfg := loadConfig()
+	appCfg := config.LoadConfig()
 	brokers := strings.Split(appCfg.KafkaBrokers, ",")
 	writer := kafka.NewWriter(kafka.WriterConfig{Brokers: brokers, Topic: appCfg.KafkaTopic})
 	defer writer.Close()
@@ -48,13 +47,4 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("serve: %v", err)
 	}
-}
-
-// loadConfig загружает конфигурацию из файла, определяя путь до текущего файла
-func loadConfig() *config.Config {
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		log.Fatal("не удалось определить путь до конфигурации")
-	}
-	return config.Load(filename)
 }
