@@ -1,0 +1,75 @@
+services:
+  # Zookeeper — нужен Kafka
+  zookeeper:
+    image: bitnami/zookeeper:3
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+
+  # Kafka брокер
+  kafka:
+    image: bitnami/kafka:3
+    container_name: kafka
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+
+  # Redis
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  # OrderService (gRPC-сервис)
+  orderservice:
+    container_name: orderservice
+    build:
+      context: .
+      dockerfile: build/orderservice/Dockerfile
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_TOPIC=orders
+      - ORDER_SERVICE_ADDR=0.0.0.0:50051
+    depends_on:
+      - kafka
+    ports:
+      - "50051:50051"
+
+  # CacheService (gRPC-сервис)
+  cacheservice:
+    container_name: cacheservice
+    build:
+      context: .
+      dockerfile: build/cacheservice/Dockerfile
+    environment:
+      - REDIS_ADDR=redis:6379
+      - CACHE_SERVICE_ADDR=0.0.0.0:50052
+    depends_on:
+      - redis
+    ports:
+      - "50052:50052"
+
+  # Worker (фоновый сервис, без портов)
+  worker:
+    container_name: worker
+    build:
+      context: .
+      dockerfile: build/worker/Dockerfile
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_TOPIC=orders
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - kafka
+      - redis
