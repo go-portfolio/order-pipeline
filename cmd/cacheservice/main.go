@@ -46,7 +46,7 @@ func main() {
 	}
 	s := grpc.NewServer()
 	pb.RegisterCacheServiceServer(s, &cacheServer{rdb: rdb})
-	log.Printf("CacheService listening on %s", appCfg.RedisAddr)
+	log.Printf("Сервис кэша слушает на порту %s", appCfg.RedisAddr)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("serve: %v", err)
 	}

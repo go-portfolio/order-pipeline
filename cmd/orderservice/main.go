@@ -43,7 +43,7 @@ func main() {
 	}
 	s := grpc.NewServer()
 	pb.RegisterOrderServiceServer(s, &server{kafkaWriter: writer})
-	log.Printf("OrderService listening on %s", appCfg.OrderServiceAddr)
+	log.Printf("Сервис заказов слушает на порту %s", appCfg.OrderServiceAddr)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("serve: %v", err)
 	}

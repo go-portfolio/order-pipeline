@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/go-portfolio/order-pipeline/internal/config"
 	pb "github.com/go-portfolio/order-pipeline/proto"
 	"github.com/redis/go-redis/v9"
 	"github.com/segmentio/kafka-go"
@@ -18,12 +18,15 @@ import (
 const maxRetries = 3
 
 func main() {
-	brokersEnv := getenv("KAFKA_BROKERS", "kafka:9092")
+	// Загружаем конфигурацию приложения из файла
+	appCfg := config.LoadConfig()
+
+	brokersEnv := appCfg.KafkaBrokers
 	brokers := strings.Split(brokersEnv, ",")
-	topic := getenv("KAFKA_TOPIC", "orders")
-	dlqTopic := getenv("DLQ_TOPIC", "orders-dlq")
-	groupID := getenv("WORKER_GROUP", "worker-group")
-	redisAddr := getenv("REDIS_ADDR", "redis:6379")
+	topic := appCfg.KafkaTopic
+	dlqTopic := appCfg.DlqTopic
+	groupID := appCfg.WorkerGroup
+	redisAddr := appCfg.RedisAddr
 
 	reader := kafka.NewReader(kafka.ReaderConfig{Brokers: brokers, GroupID: groupID, Topic: topic})
 	defer reader.Close()
@@ -110,12 +113,4 @@ func updateRetriesHeader(msg kafka.Message, retries int) []kafka.Header {
 		headers = append(headers, kafka.Header{Key: "retries", Value: []byte(strconv.Itoa(retries))})
 	}
 	return headers
-}
-
-func getenv(key, def string) string {
-	v := os.Getenv(key)
-	if v == "" {
-		return def
-	}
-	return v
 }
