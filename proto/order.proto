@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+
+package order;
+
+
+option go_package = "github.com/go-portfolio/order-pipeline/internal/pb;pb";
+
+
+service OrderService {
+rpc CreateOrder (OrderRequest) returns (OrderResponse);
+}
+
+
+service CacheService {
+rpc GetOrderResult (ResultRequest) returns (ResultResponse);
+}
+
+
+message OrderRequest {
+string id = 1;
+string item = 2;
+int32 price = 3;
+}
+
+
+message OrderResponse {
+string status = 1;
+}
+
+
+message ResultRequest {
+string id = 1;
+}
+
+
+message ResultResponse {
+string item = 1;
+int32 price = 2;
+string status = 3;
+}
