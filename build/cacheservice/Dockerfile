@@ -20,24 +20,19 @@ RUN go mod download
 # Копируем весь исходный код
 COPY . .
 
-# ---------- Используем готовые бинарники protoc-gen-go ----------
-# Эти бинарники должны быть заранее собраны на Linux/amd64
-# Локально:
-# GO111MODULE=on go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0
-# GO111MODULE=on go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
-# Затем положить их в директорию рядом с Dockerfile: bin/protoc-gen-go, bin/protoc-gen-go-grpc
 
-COPY bin/protoc-gen-go /usr/local/bin/
-COPY bin/protoc-gen-go-grpc /usr/local/bin/
+# ---------- Установка protoc-плагинов ----------
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
 
 # Генерация protobuf кода
 RUN protoc --proto_path=proto \
-    --go_out=internal/pb \
-    --go-grpc_out=internal/pb \
+    --go_out=proto \
+    --go-grpc_out=proto \
     proto/order.proto
 
 # Сборка статического бинарника
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/orderservice ./cmd/orderservice2
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/cacheservice ./cmd/cacheservice
 
 # ---------- final stage ----------
 FROM alpine:3.18
@@ -46,10 +41,10 @@ FROM alpine:3.18
 RUN apk add --no-cache ca-certificates
 
 # Копируем готовый бинарник
-COPY --from=build /out/orderservice /usr/local/bin/orderservice
+COPY --from=build /out/cacheservice /usr/local/bin/cacheservice
 
 # Порт gRPC
 EXPOSE 50052
 
 # Точка входа
-ENTRYPOINT ["/usr/local/bin/orderservice"]
+ENTRYPOINT ["/usr/local/bin/cacheservice"]

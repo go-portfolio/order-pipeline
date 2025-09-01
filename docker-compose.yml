@@ -56,6 +56,10 @@ services:
     build:
       context: .
       dockerfile: build/cacheservice/Dockerfile
+    deploy:
+      resources:
+        limits:
+          memory: 4g    
     environment:
       - REDIS_ADDR=redis:6379
       - CACHE_SERVICE_ADDR=0.0.0.0:50052
@@ -70,6 +74,10 @@ services:
     build:
       context: .
       dockerfile: build/worker/Dockerfile
+    deploy:
+      resources:
+        limits:
+          memory: 4g    
     environment:
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_TOPIC=orders
