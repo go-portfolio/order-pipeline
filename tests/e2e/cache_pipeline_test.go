@@ -8,22 +8,21 @@ import (
 	pb "github.com/go-portfolio/order-pipeline/proto"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Параметры подключения к сервисам
 const (
-	orderServiceAddr = "localhost:50051"
-	cacheServiceAddr = "localhost:50052"
+	orderServiceAddr = "orderservice:50051"
+	cacheServiceAddr = "cacheservice:50052"
 	testOrderID      = "e2e-test-1"
 )
 
-// TestFullPipeline проверяет, что заказ проходит полный путь:
-// orderservice -> Kafka -> worker -> Redis -> cacheservice
 func TestFullPipeline(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
-	// 1️⃣ Отправляем заказ в OrderService
-	connOrder, err := grpc.Dial(orderServiceAddr, grpc.WithInsecure())
+	// 1️⃣ Подключение к OrderService
+	connOrder, err := grpc.NewClient(orderServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 	defer connOrder.Close()
 
@@ -37,25 +36,28 @@ func TestFullPipeline(t *testing.T) {
 	respOrder, err := orderClient.CreateOrder(ctx, orderReq)
 	require.NoError(t, err)
 	require.Equal(t, "accepted", respOrder.Status)
-
 	t.Logf("Order sent: %v", orderReq)
 
-	// 2️⃣ Ждем обработки worker (обычно достаточно 1-2 секунды)
-	time.Sleep(2 * time.Second)
+	// 2️⃣ Ждем обработки worker с polling
+	var cacheResp *pb.ResultResponse
+	retries := 5
+	for i := 0; i < retries; i++ {
+		connCache, err := grpc.NewClient(cacheServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		require.NoError(t, err)
+		cacheClient := pb.NewCacheServiceClient(connCache)
 
-	// 3️⃣ Проверяем, что результат доступен в CacheService
-	connCache, err := grpc.Dial(cacheServiceAddr, grpc.WithInsecure())
-	require.NoError(t, err)
-	defer connCache.Close()
+		cacheResp, err = cacheClient.GetOrderResult(ctx, &pb.ResultRequest{Id: testOrderID})
+		connCache.Close()
 
-	cacheClient := pb.NewCacheServiceClient(connCache)
-	cacheResp, err := cacheClient.GetOrderResult(ctx, &pb.ResultRequest{Id: testOrderID})
-	require.NoError(t, err)
+		if err == nil {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
 
-	// 4️⃣ Проверяем, что данные совпадают
+	require.NoError(t, err, "cache service did not return result in time")
 	require.Equal(t, orderReq.Item, cacheResp.Item)
 	require.Equal(t, orderReq.Price, cacheResp.Price)
 	require.Equal(t, "done", cacheResp.Status)
-
 	t.Logf("Order processed successfully: %v", cacheResp)
 }

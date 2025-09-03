@@ -47,6 +47,8 @@ services:
       - ORDER_SERVICE_ADDR=0.0.0.0:50051
     depends_on:
       - kafka
+    networks:
+      - order-pipeline-net  
     ports:
       - "50051:50051"
 
@@ -65,6 +67,8 @@ services:
       - CACHE_SERVICE_ADDR=0.0.0.0:50052
     depends_on:
       - redis
+    networks:
+      - order-pipeline-net  
     ports:
       - "50052:50052"
 
@@ -85,16 +89,23 @@ services:
     depends_on:
       - kafka
       - redis
+    networks:
+      - order-pipeline-net  
   tests:
-    image: golang:1.24
+    build:
+      context: .
+      dockerfile: build/tests/Dockerfile
     container_name: tests
-    working_dir: /app
-    volumes:
-      - .:/app
     depends_on:
       - orderservice
       - cacheservice
       - worker
       - kafka
       - redis
-    command: ["go", "test", "-v", "./tests/e2e/..."]
+    networks:
+      - order-pipeline-net
+    command: tail -f /dev/null
+
+networks:
+  order-pipeline-net:
+    driver: bridge
