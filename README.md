@@ -14,3 +14,11 @@ Client — запрашивает готовые данные из кэша дл
 То есть поток данных:
 
 Client → gRPC API → Kafka → Worker → Redis → Client
+
+# Микросервисный пайплайн заказов:
+
+OrderService (gRPC) → принимает заказы и пишет их в Kafka
+
+Worker → читает заказы из Kafka, обрабатывает, кладёт результат в Redis
+
+CacheService (gRPC) → отдаёт результат заказа из Redis
