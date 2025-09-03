@@ -10,14 +10,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-// cacheServer реализует gRPC-сервис CacheService и хранит подключение к Redis
-type cacheServer struct {
-	pb.UnimplementedCacheServiceServer
-	rdb *redis.Client // клиент для работы с Redis
-}
-
-// NewCacheServer конструктор для инициализации сервера
-func NewCacheServer(rdb *redis.Client) pb.CacheServiceServer {
+// NewCacheServer конструктор для инициализации сервера с внедрением зависимостей
+func NewCacheServer(rdb RedisClient) pb.CacheServiceServer {
 	return &cacheServer{rdb: rdb}
 }
 

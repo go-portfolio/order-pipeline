@@ -16,13 +16,16 @@ import (
 
 const maxRetries = 3
 
+// WorkerServer хранит зависимости через интерфейсы
 type WorkerServer struct {
-	reader    *kafka.Reader
-	writer    *kafka.Writer
-	dlqWriter *kafka.Writer
-	rdb       *redis.Client
+	reader    KafkaReader
+	writer    KafkaWriter
+	dlqWriter KafkaWriter
+	rdb       RedisClient
 	ctx       context.Context
 }
+
+// Конструктор с внедрением зависимостей
 
 func NewWorkerServer(brokers []string, topic, dlqTopic, groupID, redisAddr string) *WorkerServer {
 	reader := kafka.NewReader(kafka.ReaderConfig{
@@ -52,6 +55,7 @@ func NewWorkerServer(brokers []string, topic, dlqTopic, groupID, redisAddr strin
 	}
 }
 
+// Run запускает основной цикл обработки сообщений
 func (w *WorkerServer) Run() {
 	defer w.reader.Close()
 	defer w.writer.Close()
@@ -74,7 +78,7 @@ func (w *WorkerServer) Run() {
 		}
 
 		log.Printf("processing order %s", order.Id)
-		time.Sleep(300 * time.Millisecond) // имитация обработки
+		time.Sleep(300 * time.Millisecond)
 
 		if strings.HasPrefix(order.Item, "fail") {
 			retries := getRetries(msg)
