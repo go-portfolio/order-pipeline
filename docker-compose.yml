@@ -85,3 +85,16 @@ services:
     depends_on:
       - kafka
       - redis
+  tests:
+    image: golang:1.24
+    container_name: tests
+    working_dir: /app
+    volumes:
+      - .:/app
+    depends_on:
+      - orderservice
+      - cacheservice
+      - worker
+      - kafka
+      - redis
+    command: ["go", "test", "-v", "./tests/e2e/..."]
