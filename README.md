@@ -22,3 +22,17 @@ OrderService (gRPC) → принимает заказы и пишет их в Ka
 Worker → читает заказы из Kafka, обрабатывает, кладёт результат в Redis
 
 CacheService (gRPC) → отдаёт результат заказа из Redis
+
+# Сборка базового образа
+Нужно чтобы большие компиляции не повторять каждый раз затрачивая время и ресурсы
+```bash
+$ docker build -f build/base/Dockerfile.build-base -t my-go-build-base .
+```
+```
+ naming to docker.io/library/my-go-build-base   
+```
+
+Сборка отдельного образа для отладки:
+```bash
+$ docker compose build cacheservice 
+```

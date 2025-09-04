@@ -7,6 +7,8 @@ services:
       - ALLOW_ANONYMOUS_LOGIN=yes
     ports:
       - "2181:2181"
+    networks:
+      - order-pipeline-net     
 
   # Kafka брокер
   kafka:
@@ -23,6 +25,8 @@ services:
       - zookeeper
     ports:
       - "9092:9092"
+    networks:
+      - order-pipeline-net    
 
   # Redis
   redis:
@@ -30,6 +34,8 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+    networks:
+      - order-pipeline-net  
 
   # OrderService (gRPC-сервис)
   orderservice:
@@ -104,7 +110,7 @@ services:
       - redis
     networks:
       - order-pipeline-net
-    command: tail -f /dev/null
+
 
 networks:
   order-pipeline-net:

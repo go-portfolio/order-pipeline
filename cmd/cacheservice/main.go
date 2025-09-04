@@ -1,39 +1,48 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 
-	"github.com/go-portfolio/order-pipeline/internal/config" // пакет для загрузки конфигурации приложения
+	"github.com/go-portfolio/order-pipeline/internal/config"
 	"github.com/go-portfolio/order-pipeline/internal/server"
-	pb "github.com/go-portfolio/order-pipeline/proto" // сгенерированные protobuf файлы
-	"github.com/redis/go-redis/v9"                    // клиент для работы с Redis
-	"google.golang.org/grpc"                          // gRPC сервер
+	pb "github.com/go-portfolio/order-pipeline/proto"
+	"github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	// Загружаем конфигурацию приложения из файла (например, ports, адрес Redis)
+	// Загружаем конфигурацию приложения
 	appCfg := config.LoadConfig()
 
-	// Создаём клиент Redis с адресом из конфигурации
-	rdb := redis.NewClient(&redis.Options{Addr: appCfg.RedisAddr})
+	// Подключаемся к Redis
+	rdb := redis.NewClient(&redis.Options{
+		Addr: appCfg.RedisAddr, // Redis: redis:6379
+	})
 
-	// Создаём TCP listener на том же адресе
-	lis, err := net.Listen("tcp", appCfg.RedisAddr)
+	// Проверим подключение к Redis (ping с контекстом)
+	ctx := context.Background()
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		log.Fatalf("cannot connect to Redis at %s: %v", appCfg.RedisAddr, err)
+	}
+
+	// Создаём TCP listener для gRPC сервера на отдельном порту
+	lis, err := net.Listen("tcp", appCfg.CacheServiceAddr) // gRPC: 0.0.0.0:50052
 	if err != nil {
-		log.Fatalf("listen: %v", err) // если порт занят или ошибка сети → завершаем приложение
+		log.Fatalf("cannot listen on %s: %v", appCfg.CacheServiceAddr, err)
 	}
 
 	// Создаём gRPC сервер
 	s := grpc.NewServer()
 
-	// Регистрируем наш сервис CacheService в gRPC
+	// Регистрируем сервис CacheService
 	pb.RegisterCacheServiceServer(s, server.NewCacheServer(rdb))
 
-	log.Printf("Сервис кэша слушает на порту %s", appCfg.RedisAddr)
+	log.Printf("CacheService listening on %s", appCfg.CacheServiceAddr)
 
-	// Запускаем gRPC сервер и обрабатываем входящие запросы
+	// Запускаем gRPC сервер
 	if err := s.Serve(lis); err != nil {
-		log.Fatalf("serve: %v", err) // если сервер упал → логируем и завершаем
+		log.Fatalf("gRPC serve failed: %v", err)
 	}
 }

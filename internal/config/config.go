@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -68,5 +69,6 @@ func LoadConfig() Config {
 	if !ok {
 		log.Fatal("не удалось определить путь до конфигурации")
 	}
+	fmt.Println(filename)
 	return *Load(filename)
 }

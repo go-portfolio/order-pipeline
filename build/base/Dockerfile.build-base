@@ -1,0 +1,8 @@
+FROM golang:1.24-alpine
+
+# Устанавливаем зависимости и плагины
+RUN apk add --no-cache git bash ca-certificates curl build-base protobuf \
+    && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0 \
+    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
+
+
