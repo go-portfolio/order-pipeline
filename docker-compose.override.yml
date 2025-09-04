@@ -44,7 +44,7 @@ services:
       context: .
       dockerfile: build/orderreceiver/Dockerfile
       args:
-        MODE: prod   
+        MODE: debug  
     deploy:
       resources:
         limits:
@@ -59,6 +59,7 @@ services:
       - order-pipeline-net  
     ports:
       - "50051:50051"
+      - "40000:40000"     
 
   # ordercache (gRPC-сервис)
   ordercache:
@@ -67,7 +68,7 @@ services:
       context: .
       dockerfile: build/ordercache/Dockerfile
       args:
-        MODE: prod 
+        MODE: debug
     deploy:
       resources:
         limits:
@@ -81,6 +82,7 @@ services:
       - order-pipeline-net  
     ports:
       - "50052:50052"
+      - "40000:40000"
 
   # orderprocessor (фоновый сервис, без портов)
   orderprocessor:
@@ -89,7 +91,7 @@ services:
       context: .
       dockerfile: build/orderprocessor/Dockerfile
       args:
-        MODE: prod 
+        MODE: debug
     deploy:
       resources:
         limits:
@@ -102,15 +104,16 @@ services:
       - kafka
       - redis
     networks:
-      - order-pipeline-net 
-      
+      - order-pipeline-net
+    ports:
+      - "40000:40000"        
 
   tests:
     build:
       context: .
       dockerfile: build/tests/Dockerfile
       args:
-        MODE: prod       
+        MODE: debug
     volumes:
       - .:/app   
     container_name: tests
@@ -122,6 +125,9 @@ services:
       - redis
     networks:
       - order-pipeline-net
+    ports:
+      - "40000:40000"
+            
 
 networks:
   order-pipeline-net:
