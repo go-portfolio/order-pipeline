@@ -2,104 +2,73 @@ package e2e
 
 import (
 	"context"
-	"fmt"
-	"net"
 	"testing"
 	"time"
 
-	"github.com/go-portfolio/order-pipeline/internal/config"
 	pb "github.com/go-portfolio/order-pipeline/proto"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require" // для удобных утверждений в тестах
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials/insecure" // используется для gRPC без TLS
 )
 
-const testOrderID = "e2e-test-1"
+// Константы для адресов сервисов и тестового заказа
+const (
+	orderServiceAddr = "orderreceiver:50051" // адрес gRPC сервиса OrderService
+	cacheServiceAddr = "ordercache:50052"   // адрес gRPC сервиса CacheService
+	testOrderID      = "e2e-test-1"         // уникальный ID тестового заказа
+)
 
-// getLocalIPs возвращает список всех IP адресов контейнера
-func getLocalIPs() ([]string, error) {
-	var ips []string
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return nil, err
-	}
-	for _, iface := range ifaces {
-		addrs, err := iface.Addrs()
-		if err != nil {
-			continue
-		}
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-			if ip.IsLoopback() || ip.To4() == nil {
-				continue
-			}
-			ips = append(ips, ip.String())
-		}
-	}
-	return ips, nil
-}
+func TestFullPipeline(t *testing.T) {
+	// Создаем контекст с таймаутом, чтобы тест не висел вечно
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel() // отменяем контекст в конце функции
 
-func TestFullPipelineWithIP(t *testing.T) {
-	// Загружаем конфигурацию приложения
-	appCfg := config.LoadConfig()
-	fmt.Println(appCfg.CacheServiceAddr)
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
+	// -----------------------------
+	// 1️⃣ Подключение к OrderService и создание заказа
+	// -----------------------------
+	connOrder, err := grpc.Dial(orderServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)          // проверяем, что соединение прошло успешно
+	defer connOrder.Close()           // закрываем соединение после теста
 
-	ips, err := getLocalIPs()
-	require.NoError(t, err)
-	require.NotEmpty(t, ips)
-
-	// Берем первый доступный IP (можно выбрать нужный по условию)
-	localIP := ips[0]
-	t.Logf("Using local container IP: %s", localIP)
-
-	cacheServiceAddr := "cacheservice:50052"
-
-	// 1️⃣ Подключение к OrderService
-	connOrder, err := grpc.Dial(cacheServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	require.NoError(t, err)
-	defer connOrder.Close()
-
-	orderClient := pb.NewOrderServiceClient(connOrder)
+	orderClient := pb.NewOrderServiceClient(connOrder) // создаем gRPC клиента для OrderService
 	orderReq := &pb.OrderRequest{
-		Id:    testOrderID,
-		Item:  "book",
-		Price: 42,
+		Id:    testOrderID, // уникальный идентификатор заказа
+		Item:  "book",      // товар
+		Price: 42,          // цена
 	}
 
-	respOrder, err := orderClient.CreateOrder(ctx, orderReq)
-	require.NoError(t, err)
-	require.Equal(t, "accepted", respOrder.Status)
-	t.Logf("Order sent: %v", orderReq)
+	respOrder, err := orderClient.CreateOrder(ctx, orderReq) // отправляем заказ
+	require.NoError(t, err)                                  // проверяем, что ошибка отсутствует
+	require.Equal(t, "accepted", respOrder.Status)           // ожидаем, что статус заказа accepted
+	t.Logf("Order sent: %v", orderReq)                       // логируем отправленный заказ
 
-	// 2️⃣ Polling для проверки результата в CacheService
+	// -----------------------------
+	// 2️⃣ Ждем обработки worker и получения результата из CacheService
+	// -----------------------------
 	var cacheResp *pb.ResultResponse
-	retries := 10
+	retries := 5 // количество попыток опроса CacheService
 	for i := 0; i < retries; i++ {
+		// Подключаемся к CacheService
 		connCache, err := grpc.Dial(cacheServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			time.Sleep(time.Second)
-			continue
-		}
+		require.NoError(t, err)
 		cacheClient := pb.NewCacheServiceClient(connCache)
+
+		// Запрашиваем результат заказа по ID
 		cacheResp, err = cacheClient.GetOrderResult(ctx, &pb.ResultRequest{Id: testOrderID})
-		connCache.Close()
+		connCache.Close() // закрываем соединение после каждого запроса
+
 		if err == nil {
-			break
+			break // если результат получен, выходим из цикла
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(1 * time.Second) // ждем перед следующей попыткой
 	}
 
+	// Проверяем, что CacheService вернул результат
 	require.NoError(t, err, "cache service did not return result in time")
+
+	// Проверяем, что данные из CacheService соответствуют отправленному заказу
 	require.Equal(t, orderReq.Item, cacheResp.Item)
 	require.Equal(t, orderReq.Price, cacheResp.Price)
 	require.Equal(t, "done", cacheResp.Status)
-	t.Logf("Order processed successfully: %v", cacheResp)
+	t.Logf("Order processed successfully: %v", cacheResp) // логируем успешную обработку
 }

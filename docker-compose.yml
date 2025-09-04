@@ -101,6 +101,8 @@ services:
     build:
       context: .
       dockerfile: build/tests/Dockerfile
+    volumes:
+      - .:/app   
     container_name: tests
     depends_on:
       - orderreceiver
