@@ -45,14 +45,6 @@ services:
       dockerfile: build/orderreceiver/Dockerfile
       args:
         MODE: prod   
-    deploy:
-      resources:
-        limits:
-          memory: 4g  
-    environment:
-      - KAFKA_BROKERS=kafka:9092
-      - KAFKA_TOPIC=orders
-      - ORDER_SERVICE_ADDR=0.0.0.0:50051
     depends_on:
       - kafka
     networks:
@@ -70,13 +62,6 @@ services:
       dockerfile: build/ordercache/Dockerfile
       args:
         MODE: prod 
-    deploy:
-      resources:
-        limits:
-          memory: 4g    
-    environment:
-      - REDIS_ADDR=redis:6379
-      - CACHE_SERVICE_ADDR=0.0.0.0:50052
     depends_on:
       - redis
     networks:
@@ -86,7 +71,7 @@ services:
     env_file:
       - .env
 
-  # orderprocessor (фоновый сервис, без портов)
+  # orderprocessor (фоновый сервис)
   orderprocessor:
     container_name: orderprocessor
     build:
@@ -94,22 +79,15 @@ services:
       dockerfile: build/orderprocessor/Dockerfile
       args:
         MODE: prod 
-    deploy:
-      resources:
-        limits:
-          memory: 4g    
-    environment:
-      - KAFKA_BROKERS=kafka:9092
-      - KAFKA_TOPIC=orders
-      - REDIS_ADDR=redis:6379
     depends_on:
       - kafka
       - redis
     networks:
-      - order-pipeline-net 
+      - order-pipeline-net
     env_file:
       - .env  
 
+  # Тесты
   tests:
     build:
       context: .
@@ -118,8 +96,6 @@ services:
         MODE: prod       
     volumes:
       - ./tests:/app/tests
-    env_file:
-      - .env    
     container_name: tests
     depends_on:
       - orderreceiver
@@ -129,7 +105,8 @@ services:
       - redis
     networks:
       - order-pipeline-net
-         
+    env_file:
+      - .env    
 
 networks:
   order-pipeline-net:
