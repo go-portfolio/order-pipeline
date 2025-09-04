@@ -1,19 +1,5 @@
+# Сборка проекта для cacheservice
 FROM my-go-build-base AS build
-
-# Опционально рабочий каталог
-WORKDIR /src
-
-# Копируем исходники
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-
-
-# Генерация protobuf кода
-RUN protoc --proto_path=proto \
-    --go_out=proto \
-    --go-grpc_out=proto \
-    proto/order.proto
 
 # Сборка статического бинарника
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/cacheservice ./cmd/cacheservice
@@ -30,13 +16,11 @@ WORKDIR /app
 
 # Копируем бинарник из предыдущего stage
 COPY --from=build /out/cacheservice /app/cacheservice
+COPY --from=build /src/scripts/start-cacheservice.sh /app/start.sh
 
-# (опционально) копируем .env внутрь контейнера
-# COPY .env /app/.env
+COPY .env /app/.env  
 
-# Открываем порт для gRPC
+RUN chmod +x /app/start.sh
+
 EXPOSE 50052
-
-# Запускаем сервис как основной процесс контейнера
-#ENTRYPOINT ["/app/cacheservice"]
-CMD ["tail", "-f", "/dev/null"]
+ENTRYPOINT ["/app/start.sh"]

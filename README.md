@@ -36,3 +36,18 @@ $ docker build -f build/base/Dockerfile.build-base -t my-go-build-base .
 ```bash
 $ docker compose build cacheservice 
 ```
+
+Запуск для отладки такой:
+```bash
+$ docker compose up cacheservice
+```
+```bash
+$ docker compose exec -it cacheservice sh
+```
+Пример запуска для кэша:
+```bash
+/app # /app/cacheservice
+/src/internal/config/config.go
+2025/09/04 06:26:40 .env файл не найден
+/app # 
+```

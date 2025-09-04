@@ -1,13 +1,8 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-	"runtime"
-
-	"github.com/joho/godotenv"
 )
 
 // Config хранит все переменные окружения проекта
@@ -17,36 +12,12 @@ type Config struct {
 	OrderServiceAddr string
 	RedisAddr        string
 	CacheServiceAddr string
-	DlqTopic        string
-	WorkerGroup string
+	DlqTopic         string
+	WorkerGroup      string
 }
 
 // Load ищет .env вверх от файла и загружает конфигурацию
-func Load(file string) *Config {
-	dir := filepath.Dir(file)
-	envPath := ""
-	found := false
-
-	for {
-		envPath = filepath.Join(dir, ".env")
-		if _, err := os.Stat(envPath); err == nil {
-			if err := godotenv.Load(envPath); err != nil {
-				log.Fatal("Ошибка загрузки .env файла:", err)
-			}
-			found = true
-			break
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			break
-		}
-		dir = parent
-	}
-
-	if !found {
-		log.Fatal(".env файл не найден")
-	}
-
+func Load() *Config {
 	cfg := &Config{}
 	cfg.KafkaBrokers = os.Getenv("KAFKA_BROKERS")
 	cfg.KafkaTopic = os.Getenv("KAFKA_TOPIC")
@@ -56,7 +27,8 @@ func Load(file string) *Config {
 	cfg.DlqTopic = os.Getenv("DLQ_TOPIC")
 	cfg.WorkerGroup = os.Getenv("WORKER_GROUP")
 
-	if cfg.KafkaBrokers == "" || cfg.KafkaTopic == "" || cfg.OrderServiceAddr == "" {
+	if cfg.KafkaBrokers == "" || cfg.KafkaTopic == "" || cfg.OrderServiceAddr == "" ||
+		cfg.RedisAddr == "" || cfg.CacheServiceAddr == "" || cfg.DlqTopic == "" || cfg.WorkerGroup == "" {
 		log.Fatal("Не все переменные окружения для БД установлены")
 	}
 
@@ -65,10 +37,5 @@ func Load(file string) *Config {
 
 // loadConfig загружает конфигурацию из файла, определяя путь до текущего файла
 func LoadConfig() Config {
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		log.Fatal("не удалось определить путь до конфигурации")
-	}
-	fmt.Println(filename)
-	return *Load(filename)
+	return *Load()
 }
