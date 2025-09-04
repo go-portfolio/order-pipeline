@@ -37,12 +37,12 @@ services:
     networks:
       - order-pipeline-net  
 
-  # OrderService (gRPC-сервис)
-  orderservice:
-    container_name: orderservice
+  # orderreceiver (gRPC-сервис)
+  orderreceiver:
+    container_name: orderreceiver
     build:
       context: .
-      dockerfile: build/orderservice/Dockerfile
+      dockerfile: build/orderreceiver/Dockerfile
     deploy:
       resources:
         limits:
@@ -58,12 +58,12 @@ services:
     ports:
       - "50051:50051"
 
-  # CacheService (gRPC-сервис)
-  cacheservice:
-    container_name: cacheservice
+  # ordercache (gRPC-сервис)
+  ordercache:
+    container_name: ordercache
     build:
       context: .
-      dockerfile: build/cacheservice/Dockerfile
+      dockerfile: build/ordercache/Dockerfile
     deploy:
       resources:
         limits:
@@ -78,12 +78,12 @@ services:
     ports:
       - "50052:50052"
 
-  # Worker (фоновый сервис, без портов)
-  worker:
-    container_name: worker
+  # orderprocessor (фоновый сервис, без портов)
+  orderprocessor:
+    container_name: orderprocessor
     build:
       context: .
-      dockerfile: build/worker/Dockerfile
+      dockerfile: build/orderprocessor/Dockerfile
     deploy:
       resources:
         limits:
@@ -103,9 +103,9 @@ services:
       dockerfile: build/tests/Dockerfile
     container_name: tests
     depends_on:
-      - orderservice
-      - cacheservice
-      - worker
+      - orderreceiver
+      - ordercache
+      - orderprocessor
       - kafka
       - redis
     networks:

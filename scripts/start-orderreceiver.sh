@@ -7,4 +7,4 @@ if [ -f /app/.env ]; then
 fi
 
 # Запускаем бинарник
-exec /app/cacheservice
+exec /app/orderreceiver
