@@ -46,7 +46,7 @@ ARG MODE=prod
 COPY --from=build /out/ordercache /app/ordercache
 
 # Копируем единственный скрипт запуска
-COPY --from=build /src/scripts/start-ordercache.sh /app/start.sh
+COPY --from=build /src/scripts/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
 # Для debug — копируем Delve и исходники
@@ -55,7 +55,9 @@ COPY --from=build /src /app/src
 
 EXPOSE 50052
 # Delve
-EXPOSE 40000   
+EXPOSE 40000  
+
+ENV SERVICE_BINARY=ordercache
 
 # ENTRYPOINT всегда один — управляет режимами
 ENTRYPOINT ["/app/start.sh"]

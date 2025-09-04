@@ -46,7 +46,7 @@ ARG MODE=prod
 COPY --from=build /out/orderreceiver /app/orderreceiver
 
 # Копируем единственный скрипт запуска
-COPY --from=build /src/scripts/start-orderreceiver.sh /app/start.sh
+COPY --from=build /src/scripts/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
 # Для debug — копируем Delve и исходники
@@ -56,6 +56,8 @@ COPY --from=build /src /app/src
 EXPOSE 50051
 # Delve
 EXPOSE 40000   
+
+ENV SERVICE_BINARY=orderreceiver
 
 # ENTRYPOINT всегда один — управляет режимами
 ENTRYPOINT ["/app/start.sh"]

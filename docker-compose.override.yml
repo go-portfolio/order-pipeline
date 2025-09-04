@@ -82,7 +82,7 @@ services:
       - order-pipeline-net  
     ports:
       - "50052:50052"
-      - "40000:40000"
+      - "40001:40000"
 
   # orderprocessor (фоновый сервис, без портов)
   orderprocessor:
@@ -106,7 +106,7 @@ services:
     networks:
       - order-pipeline-net
     ports:
-      - "40000:40000"        
+      - "40002:40000"        
 
   tests:
     build:
@@ -115,7 +115,7 @@ services:
       args:
         MODE: debug
     volumes:
-      - .:/app   
+      - ./tests:/app/tests
     container_name: tests
     depends_on:
       - orderreceiver
@@ -126,7 +126,7 @@ services:
     networks:
       - order-pipeline-net
     ports:
-      - "40000:40000"
+      - "40003:40000"
             
 
 networks:

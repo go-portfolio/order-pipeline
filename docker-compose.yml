@@ -59,6 +59,8 @@ services:
       - order-pipeline-net  
     ports:
       - "50051:50051"
+    env_file:
+      - .env
 
   # ordercache (gRPC-сервис)
   ordercache:
@@ -81,6 +83,8 @@ services:
       - order-pipeline-net  
     ports:
       - "50052:50052"
+    env_file:
+      - .env
 
   # orderprocessor (фоновый сервис, без портов)
   orderprocessor:
@@ -103,7 +107,8 @@ services:
       - redis
     networks:
       - order-pipeline-net 
-      
+    env_file:
+      - .env  
 
   tests:
     build:
@@ -112,7 +117,9 @@ services:
       args:
         MODE: prod       
     volumes:
-      - .:/app   
+      - ./tests:/app/tests
+    env_file:
+      - .env    
     container_name: tests
     depends_on:
       - orderreceiver
@@ -122,6 +129,7 @@ services:
       - redis
     networks:
       - order-pipeline-net
+         
 
 networks:
   order-pipeline-net:
