@@ -15,7 +15,7 @@ if [ "$MODE" = "debug" ]; then
     exec /dlv exec /app/$SERVICE_BINARY --headless --listen=:40000 --api-version=2 --accept-multiclient
   else
     # Для тестов используем dlv test
-    exec /dlv test ./... --headless --listen=:40000 --api-version=2 --accept-multiclient
+    exec dlv test ./... --output=/dev/null --headless --listen=:40000 --api-version=2 --accept-multiclient 
   fi
 else
   echo "Запуск $SERVICE_BINARY в режиме PROD"

@@ -51,3 +51,12 @@ $ docker compose exec -it cacheservice sh
 2025/09/04 06:26:40 .env файл не найден
 /app # 
 ```
+
+Сборка контейнеров с режимом debug:
+docker compose build --build-arg MODE=debug ordercache
+
+Для вывода всех информативных сообщений в докере во время сборки:
+```
+$ DOCKER_BUILDKIT=0 docker compose -f docker-compose.yml -f docker-compose.override.yml build --no-cache --progress=plain    tests
+```
+

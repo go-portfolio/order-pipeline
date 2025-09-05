@@ -1,8 +1,6 @@
-ARG MODE=prod
-
 # ---------- build stage ----------
 FROM golang:1.24-alpine as build
-
+ARG MODE=prod
 # Устанавливаем зависимости
 RUN apk add --no-cache git bash ca-certificates curl build-base protobuf
 
@@ -12,8 +10,12 @@ RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0 \
 
 # Если debug — ставим Delve
 ARG MODE=prod
+# Для debug — ставим Delve
 RUN if [ "$MODE" = "debug" ]; then \
+      echo "orderprocessor: MODE=debug — устанавливаем Delve..."; \
       go install github.com/go-delve/delve/cmd/dlv@latest ; \
+    else \
+      echo "MODE=$MODE — пропускаем установку Delve"; \
     fi
 
 WORKDIR /src

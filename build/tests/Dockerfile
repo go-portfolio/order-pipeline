@@ -1,6 +1,5 @@
-ARG MODE=prod
 FROM golang:1.24
-
+ARG MODE=prod
 WORKDIR /app
 
 # Копируем go.mod и go.sum для кэша зависимостей
@@ -10,9 +9,13 @@ RUN go mod download
 # Копируем весь код тестов
 COPY . .
 
+RUN echo "tests: MODE=$MODE  — устанавливаем Delve..."; 
 # Для debug — ставим Delve
 RUN if [ "$MODE" = "debug" ]; then \
+      echo "tests: MODE=debug — устанавливаем Delve..."; \
       go install github.com/go-delve/delve/cmd/dlv@latest ; \
+    else \
+      echo "MODE=$MODE — пропускаем установку Delve"; \
     fi
 
 # Копируем общий скрипт запуска (относительно контекста сборки)
@@ -23,4 +26,5 @@ RUN chmod +x /app/start.sh
 ENV SERVICE_BINARY=tests
 
 # CMD — запускаем общий скрипт
-CMD ["/app/start.sh"]
+ENTRYPOINT ["/app/start.sh"]
+
