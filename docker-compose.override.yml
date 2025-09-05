@@ -44,7 +44,11 @@ services:
       context: .
       dockerfile: build/orderreceiver/Dockerfile
       args:
-        MODE: debug  
+        MODE: debug 
+    volumes:
+      - ./cmd/orderreceiver:/app/src/cmd/orderreceiver
+      - ./internal:/app/src/internal
+      - ./proto:/app/src/proto               
     depends_on:
       - kafka
     networks:
@@ -63,6 +67,10 @@ services:
       dockerfile: build/ordercache/Dockerfile
       args:
         MODE: debug
+    volumes:
+      - ./cmd/ordercache:/app/src/cmd/ordercache
+      - ./internal:/app/src/internal
+      - ./proto:/app/src/proto    
     depends_on:
       - redis
     networks:
@@ -81,6 +89,10 @@ services:
       dockerfile: build/orderprocessor/Dockerfile
       args:
         MODE: debug
+    volumes:
+      - ./cmd/orderprocessor:/app/src/cmd/orderprocessor
+      - ./internal:/app/src/internal
+      - ./proto:/app/src/proto           
     depends_on:
       - kafka
       - redis

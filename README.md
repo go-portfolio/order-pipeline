@@ -52,11 +52,17 @@ $ docker compose exec -it cacheservice sh
 /app # 
 ```
 
-Сборка контейнеров с режимом debug:
-docker compose build --build-arg MODE=debug ordercache
+Сборка контейнеров чтобы подхватывались `docker-compose.override.yml`:
+docker compose up -d --build tests
+
 
 Для вывода всех информативных сообщений в докере во время сборки:
 ```
 $ DOCKER_BUILDKIT=0 docker compose -f docker-compose.yml -f docker-compose.override.yml build --no-cache --progress=plain    tests
+```
+
+Чтобы изменения подхватывались автоматически:
+```
+dlv exec ./cmd/ordercache
 ```
 
