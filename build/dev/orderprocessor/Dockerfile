@@ -37,12 +37,13 @@ ENV GO111MODULE=on \
     PATH=/go/bin:$PATH
 
 # Открываем порты:
-# 40002 – Delve debugger
-EXPOSE  40002
+# 40000 – Delve debugger
+EXPOSE  40000
 
 # Копируем скрипт запуска
-COPY scripts/dev/start-orderprocessor.sh /app/start.sh
+COPY scripts/dev/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
+ENV SERVICE=orderprocessor
 
 # ENTRYPOINT использует скрипт для выбора обычного запуска или Delve
 ENTRYPOINT ["/app/start.sh"]

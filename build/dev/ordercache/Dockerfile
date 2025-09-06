@@ -38,12 +38,13 @@ ENV GO111MODULE=on \
 
 # Открываем порты:
 # 50052 – gRPC сервис
-# 40001 – Delve debugger
-EXPOSE 50052 40001
+# 40000 – Delve debugger
+EXPOSE 50052 40000
 
 # Копируем скрипт запуска
-COPY scripts/dev/start-ordercache.sh /app/start.sh
+COPY scripts/dev/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
+ENV SERVICE=ordercache
 
 # ENTRYPOINT использует скрипт для выбора обычного запуска или Delve
 ENTRYPOINT ["/app/start.sh"]

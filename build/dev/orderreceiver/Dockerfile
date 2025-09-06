@@ -42,8 +42,9 @@ ENV GO111MODULE=on \
 EXPOSE 50051 40000
 
 # Копируем скрипт запуска
-COPY scripts/dev/start-orderreceiver.sh /app/start.sh
+COPY scripts/dev/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
+ENV SERVICE=orderreceiver
 
 # ENTRYPOINT использует скрипт для выбора обычного запуска или Delve
 ENTRYPOINT ["/app/start.sh"]

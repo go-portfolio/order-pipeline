@@ -79,7 +79,7 @@ services:
       - order-pipeline-net  
     ports:
       - "50052:50052"
-      - "40001:40001"
+      - "40001:40000"
     env_file:
       - .env
 
@@ -102,9 +102,9 @@ services:
     networks:
       - order-pipeline-net
     ports:
-      - "40002:40002"
+      - "40002:40000"
     env_file:
-      - .env  
+      - .env 
 
   # Тесты
   tests:
