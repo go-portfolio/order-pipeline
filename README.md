@@ -75,3 +75,5 @@ grpc.reflection.v1.ServerReflection
 grpc.reflection.v1alpha.ServerReflection
 order.OrderService
 ```
+
+docker compose -f docker-compose.prod.yml ps

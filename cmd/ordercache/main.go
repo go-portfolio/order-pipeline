@@ -10,6 +10,7 @@ import (
 	pb "github.com/go-portfolio/order-pipeline/proto"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -38,6 +39,9 @@ func main() {
 
 	// Регистрируем сервис CacheService
 	pb.RegisterCacheServiceServer(s, server.NewCacheServer(rdb))
+
+	// Включаем reflection
+	reflection.Register(s)
 
 	log.Printf("CacheService listening on %s", appCfg.CacheServiceAddr)
 

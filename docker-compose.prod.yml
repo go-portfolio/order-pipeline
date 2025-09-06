@@ -42,7 +42,7 @@ services:
     container_name: orderreceiver
     build:
       context: .
-      dockerfile: build/orderreceiver/Dockerfile
+      dockerfile: build/prod/orderreceiver/Dockerfile
       args:
         MODE: prod   
     depends_on:
@@ -59,7 +59,7 @@ services:
     container_name: ordercache
     build:
       context: .
-      dockerfile: build/ordercache/Dockerfile
+      dockerfile: build/prod/ordercache/Dockerfile
       args:
         MODE: prod 
     depends_on:
@@ -76,7 +76,7 @@ services:
     container_name: orderprocessor
     build:
       context: .
-      dockerfile: build/orderprocessor/Dockerfile
+      dockerfile: build/prod/orderprocessor/Dockerfile
       args:
         MODE: prod 
     depends_on:
@@ -91,11 +91,11 @@ services:
   tests:
     build:
       context: .
-      dockerfile: build/tests/Dockerfile
+      dockerfile: build/prod/tests/Dockerfile
       args:
         MODE: prod       
     volumes:
-      - ./tests:/app/tests
+      - .:/app  
     container_name: tests
     depends_on:
       - orderreceiver
