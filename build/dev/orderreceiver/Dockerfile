@@ -1,46 +1,49 @@
-# Стадия сборки проекта
-FROM golang:1.24-alpine as build
+# ---------- dev/debug stage with Delve ----------
+FROM golang:1.24-bullseye
 
-# Устанавливаем зависимости и плагины
-RUN apk add --no-cache git bash ca-certificates curl build-base protobuf \
-    && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0 \
+# Устанавливаем зависимости и инструменты + netcat
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git bash ca-certificates curl build-essential protobuf-compiler \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Устанавливаем Delve (последняя версия)
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+# Устанавливаем плагины для protobuf
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0 \
     && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
 
-# Опционально рабочий каталог
-WORKDIR /src
+# Рабочая директория
+WORKDIR /app
 
-# Копируем исходники
+# Копируем go.mod/go.sum и скачиваем зависимости
 COPY go.mod go.sum ./
 RUN go mod download
+
+# Копируем весь проект
 COPY . .
 
 # Генерация protobuf кода
 RUN protoc --proto_path=proto \
     --go_out=proto \
     --go-grpc_out=proto \
-    proto/order.proto    
+    proto/order.proto
 
-# Сборка статического бинарника
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/orderreceiver ./cmd/orderreceiver
+# Переменные окружения
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOPATH=/go \
+    PATH=/go/bin:$PATH
 
+# Открываем порты:
+# 50051 – gRPC сервис
+# 40000 – Delve debugger
+EXPOSE 50051 40000
 
-# ---------- final stage ----------
-FROM alpine:3.18
-
-# Устанавливаем сертификаты для HTTPS
-RUN apk add --no-cache ca-certificates
-
-# Создаём рабочую директорию внутри контейнера
-WORKDIR /app
-
-# Копируем бинарник из предыдущего stage
-COPY --from=build /out/orderreceiver /app/orderreceiver
-COPY --from=build /src/scripts/start.sh /app/start.sh
-
-COPY .env /app/.env  
-
+# Копируем скрипт запуска
+COPY scripts/dev/start-orderreceiver.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-EXPOSE 50051
-ENV SERVICE_BINARY=orderreceiver
+# ENTRYPOINT использует скрипт для выбора обычного запуска или Delve
 ENTRYPOINT ["/app/start.sh"]

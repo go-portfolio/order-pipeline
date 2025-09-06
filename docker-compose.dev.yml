@@ -44,7 +44,8 @@ services:
       context: .
       dockerfile: build/dev/orderreceiver/Dockerfile
       args:
-        MODE: debug 
+        MODE: debug
+    command: debug      
     volumes:
       - ./cmd/orderreceiver:/app/src/cmd/orderreceiver
       - ./internal:/app/src/internal
@@ -90,6 +91,7 @@ services:
       dockerfile: build/dev/orderprocessor/Dockerfile
       args:
         MODE: debug
+    command: debug       
     volumes:
       - ./cmd/orderprocessor:/app/src/cmd/orderprocessor
       - ./internal:/app/src/internal
@@ -100,7 +102,7 @@ services:
     networks:
       - order-pipeline-net
     ports:
-      - "40002:40000"
+      - "40002:40002"
     env_file:
       - .env  
 
