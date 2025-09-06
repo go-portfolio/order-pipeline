@@ -77,3 +77,10 @@ order.OrderService
 ```
 
 docker compose -f docker-compose.prod.yml ps
+
+
+Для отладки тестов dlv стартовать вручную:
+```bash
+docker exec -it tests bash
+dlv test ./tests --headless --listen=:40003 --api-version=2 --accept-multiclient --log
+```
