@@ -3,7 +3,6 @@ module github.com/go-portfolio/order-pipeline
 go 1.24.6
 
 require (
-	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/segmentio/kafka-go v0.4.49
 	github.com/stretchr/testify v1.8.0

@@ -61,8 +61,17 @@ docker compose up -d --build tests
 $ DOCKER_BUILDKIT=0 docker compose -f docker-compose.yml -f docker-compose.override.yml build --no-cache --progress=plain    tests
 ```
 
-Чтобы изменения подхватывались автоматически:
+Сборка проды:
+1. Нужно указать в файле .env `MODE=prod`
+2. Запуск со сборкой:
 ```
-dlv exec ./cmd/ordercache
+docker compose -f docker-compose.prod.yml up -d orderreceiver --build
 ```
 
+Получение описания микросервиса:
+```
+$ grpcurl -plaintext 127.0.0.1:50051 list
+grpc.reflection.v1.ServerReflection
+grpc.reflection.v1alpha.ServerReflection
+order.OrderService
+```

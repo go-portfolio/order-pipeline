@@ -12,10 +12,11 @@ if [ "$MODE" = "debug" ]; then
   echo "Запуск $SERVICE_BINARY в режиме DEBUG"
   # Для обычных сервисов
   if [ "$SERVICE_BINARY" != "tests" ]; then
-    exec /dlv exec /app/$SERVICE_BINARY --headless --listen=:40000 --api-version=2 --accept-multiclient
+    exec /dlv exec /app/orderreceiver --headless --listen=:40000 --api-version=2 --accept-multiclient --log 
   else
     # Для тестов используем dlv test
-    exec dlv test ./tests/e2e --output=/dev/null  --headless --listen=:40000 --api-version=2 --accept-multiclient
+    exec dlv test ./tests/e2e --output=./debug.test --headless --listen=:40000 --api-version=2 --accept-multiclient --log
+
   fi
 else
   echo "Запуск $SERVICE_BINARY в режиме PROD"

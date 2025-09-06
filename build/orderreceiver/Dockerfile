@@ -1,65 +1,46 @@
-# ---------- build stage ----------
+# Стадия сборки проекта
 FROM golang:1.24-alpine as build
-ARG MODE=prod
-# Устанавливаем зависимости
-RUN apk add --no-cache git bash ca-certificates curl build-base protobuf
 
-# Ставим плагины для генерации protobuf
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0 \
+# Устанавливаем зависимости и плагины
+RUN apk add --no-cache git bash ca-certificates curl build-base protobuf \
+    && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0 \
     && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
 
-# Если debug — ставим Delve
-ARG MODE=prod
-# Для debug — ставим Delve
-RUN if [ "$MODE" = "debug" ]; then \
-      echo "ordercache: MODE=debug — устанавливаем Delve..."; \
-      go install github.com/go-delve/delve/cmd/dlv@latest ; \
-    else \
-      echo "MODE=$MODE — пропускаем установку Delve"; \
-    fi
-
+# Опционально рабочий каталог
 WORKDIR /src
 
-# Копируем go.mod и go.sum для кэширования
+# Копируем исходники
 COPY go.mod go.sum ./
 RUN go mod download
-
-# Копируем исходники
 COPY . .
 
-# Генерация protobuf
+# Генерация protobuf кода
 RUN protoc --proto_path=proto \
     --go_out=proto \
     --go-grpc_out=proto \
     proto/order.proto    
 
-# Сборка бинарника всегда (для prod и debug)
-RUN CGO_ENABLED=0 GOOS=linux go build -o /out/orderreceiver ./cmd/orderreceiver
+# Сборка статического бинарника
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/orderreceiver ./cmd/orderreceiver
 
-# ---------- runtime stage ----------
+
+# ---------- final stage ----------
 FROM alpine:3.18
 
-RUN apk add --no-cache ca-certificates bash
+# Устанавливаем сертификаты для HTTPS
+RUN apk add --no-cache ca-certificates
 
+# Создаём рабочую директорию внутри контейнера
 WORKDIR /app
-ARG MODE=prod
 
-# Копируем бинарник
+# Копируем бинарник из предыдущего stage
 COPY --from=build /out/orderreceiver /app/orderreceiver
-
-# Копируем единственный скрипт запуска
 COPY --from=build /src/scripts/start.sh /app/start.sh
+
+COPY .env /app/.env  
+
 RUN chmod +x /app/start.sh
 
-# Для debug — копируем Delve и исходники
-COPY --from=build /go/bin/dlv /dlv
-COPY --from=build /src /app/src
-
 EXPOSE 50051
-# Delve
-EXPOSE 40000   
-
 ENV SERVICE_BINARY=orderreceiver
-
-# ENTRYPOINT всегда один — управляет режимами
 ENTRYPOINT ["/app/start.sh"]

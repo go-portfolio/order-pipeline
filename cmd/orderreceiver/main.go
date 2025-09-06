@@ -10,6 +10,7 @@ import (
 	pb "github.com/go-portfolio/order-pipeline/proto" // сгенерированные protobuf файлы для OrderService
 	"github.com/segmentio/kafka-go"                   // клиент Kafka для записи сообщений
 	"google.golang.org/grpc"                          // gRPC сервер
+	"google.golang.org/grpc/reflection"
 	// сериализация protobuf-сообщений
 )
 
@@ -40,6 +41,9 @@ func main() {
 	pb.RegisterOrderServiceServer(s, server.NewOrderServer(writer))
 
 	log.Printf("Сервис заказов слушает на порту %s", appCfg.OrderServiceAddr)
+
+	// Включаем reflection
+	reflection.Register(s)
 
 	// Запускаем gRPC сервер и обрабатываем входящие запросы
 	if err := s.Serve(lis); err != nil {
