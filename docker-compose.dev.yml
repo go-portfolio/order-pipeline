@@ -42,7 +42,7 @@ services:
     container_name: orderreceiver
     build:
       context: .
-      dockerfile: build/orderreceiver/Dockerfile
+      dockerfile: build/dev/orderreceiver/Dockerfile
       args:
         MODE: debug 
     volumes:
@@ -64,9 +64,10 @@ services:
     container_name: ordercache
     build:
       context: .
-      dockerfile: build/ordercache/Dockerfile
+      dockerfile: build/dev/ordercache/Dockerfile
       args:
         MODE: debug
+    command: debug    
     volumes:
       - ./cmd/ordercache:/app/src/cmd/ordercache
       - ./internal:/app/src/internal
@@ -77,7 +78,7 @@ services:
       - order-pipeline-net  
     ports:
       - "50052:50052"
-      - "40001:40000"
+      - "40001:40001"
     env_file:
       - .env
 
@@ -86,7 +87,7 @@ services:
     container_name: orderprocessor
     build:
       context: .
-      dockerfile: build/orderprocessor/Dockerfile
+      dockerfile: build/dev/orderprocessor/Dockerfile
       args:
         MODE: debug
     volumes:
@@ -107,7 +108,7 @@ services:
   tests:
     build:
       context: .
-      dockerfile: build/tests/Dockerfile
+      dockerfile: build/dev/tests/Dockerfile
       args:
         MODE: debug
     volumes:
